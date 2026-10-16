@@ -1,0 +1,9 @@
+# Public repo: only the judging tools are published (GitHub Pages).
+# Everything else in this event folder stays local.
+*
+!.gitignore
+!README.md
+!index.html
+!scorer.html
+!results.html
+!scorecard.pdf
