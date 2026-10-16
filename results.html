@@ -239,9 +239,11 @@ function findOrAddTeam(no, name) {
 }
 function importInto(ji, sheet, fname) {
   const j = state.judges[ji]; if (sheet.judge) j.name = sheet.judge; j.file = fname;
-  let added = 0;
+  let added = 0; const seen = new Set();
   sheet.rows.forEach(r => {
     const { t, added: a, mismatch } = findOrAddTeam(r.no, r.name); if (a) added++;
+    if (seen.has(t.id)) { note(`${jname(j, ji)}'s marks list team ${t.no || t.name} more than once (“${r.name || "untitled"}”). Only the first entry was used; check with the judge.`, "err"); return; }
+    seen.add(t.id);
     if (mismatch) note(`${jname(j, ji)} called team ${t.no || t.name} “${r.name}”, but the team list says “${t.name}”. Check it's the same team.`);
     j.marks[t.id] = r.s; if (r.notes) j.notes[t.id] = r.notes;
   });

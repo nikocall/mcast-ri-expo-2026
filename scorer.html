@@ -311,6 +311,8 @@ document.getElementById("send").onclick = async () => {
   if (!state.judge.trim()) warn.push("Add your name at the top first, so the organiser knows whose marks these are.");
   const inc = state.teams.filter(t => !complete(t) && (t.no || t.name || t.s.some(Boolean)));
   if (inc.length) warn.push(`${inc.length} team${inc.length > 1 ? "s aren't" : " isn't"} fully scored yet (${inc.map(label).join(", ")}). You can still send and send again later.`);
+  const byNo = {}; state.teams.forEach(t => { const k = t.no.trim().replace(/^#/, "").replace(/^0+(?=\d)/, ""); if (k) (byNo[k] = byNo[k] || []).push(t.name || "untitled"); });
+  Object.entries(byNo).filter(([, v]) => v.length > 1).forEach(([k, v]) => warn.push(`Team no. ${k} is used for ${v.length} teams (${v.join(", ")}). Give each team its own number, or remove the extra card, before sending.`));
   const teams = state.teams.filter(t => t.no || t.name || t.s.some(Boolean)).map(t => [t.no, t.name, ...t.s, t.notes]);
   const code = await encodePayload({ v: 1, j: state.judge.trim(), at: new Date().toISOString(), t: teams });
   const url = SITE + "results.html#submit=" + code;
