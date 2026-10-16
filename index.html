@@ -36,7 +36,15 @@ main .wrap { padding-top:28px; padding-bottom:50px; }
 .info ol { margin:8px 0 0; padding-left:20px; }
 footer { color:var(--muted); font-size:12px; border-top:1px solid var(--rule); padding:14px 0 30px; }
 @media (max-width:820px) { .cards { grid-template-columns:1fr; } h1 { font-size:24px; } header img { height:38px; } }
-</style></head>
+.qrcard { margin-top:18px; display:grid; grid-template-columns:auto 1fr; gap:24px; align-items:center; border:1.5px solid var(--rule); border-radius:16px; padding:20px 24px; }
+.qrbox { width:200px; height:200px; background:#fff; } .qrbox svg { width:100%; height:100%; display:block; }
+.qrcard h2 { margin:0 0 6px; color:var(--navy); font-size:20px; }
+.qrcard p { margin:0 0 12px; color:var(--muted); font-size:14px; }
+.qrcard code { font-size:13px; color:var(--navy); background:var(--tint); padding:3px 8px; border-radius:6px; word-break:break-all; }
+@media (max-width:820px) { .qrcard { grid-template-columns:1fr; justify-items:center; text-align:center; } }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
 <body>
 <header><div class="wrap">
   <div>
@@ -62,18 +70,28 @@ footer { color:var(--muted); font-size:12px; border-top:1px solid var(--rule); p
     </section>
     <section class="card">
       <span class="who">For organisers</span>
-      <h2>Combined Results</h2>
-      <p>Import the judges' CSVs or type in marks from paper scorecards. Produces the final ranking and both judged awards.</p>
+      <h2>Master Results</h2>
+      <p>Your master page. Judges' “Send to organiser” links land here; you can also import CSVs or type in paper scorecards. Produces the final ranking and both judged awards.</p>
       <div class="row"><a class="btn" href="results.html">Open results</a><button class="btn alt" data-copy="results.html">Copy link</button></div>
     </section>
   </div>
+  <section class="qrcard">
+    <div class="qrbox" id="qr" role="img" aria-label="QR code that opens the Judging Scorer"></div>
+    <div>
+      <span class="k">For judges</span>
+      <h2>Scan to open the Judging Scorer</h2>
+      <p>Point a phone camera at the code. It opens the scorer, ready to mark the pitches.</p>
+      <p><code>nikocall.github.io/mcast-ri-expo-2026/scorer.html</code></p>
+      <div class="row"><button class="btn" id="qrPng">Save QR as image</button><button class="btn alt" data-copy="scorer.html">Copy link</button></div>
+    </div>
+  </section>
   <div class="info">
     <b>How it works</b>
     <ol>
-      <li>Send each judge the scorer link (or a printed scorecard).</li>
-      <li>Judges score every pitch; scores save in their own browser as they go.</li>
-      <li>After the last pitch, each judge downloads their CSV and sends it to the organisers.</li>
-      <li>Organisers open Combined Results and import the 4 CSVs (or type the paper marks).</li>
+      <li>The organiser keeps the <b>Master Results</b> page open on their own device.</li>
+      <li>Judges open the scorer (link or QR) and score every pitch; scores save in their own browser as they go.</li>
+      <li>After the last pitch, each judge taps <b>Send to organiser</b> and shares the link it makes (WhatsApp, email or QR).</li>
+      <li>The organiser opens each link on the master device and taps <b>Add to master results</b>. Paper scorecards can be typed in.</li>
     </ol>
     <p style="margin:10px 0 0"><b>Privacy:</b> scores are never uploaded. They stay in each person's browser until they download or clear them.</p>
   </div>
@@ -87,6 +105,22 @@ function copyLink(url, btn) {
     let ok = false; try { ok = document.execCommand("copy"); } catch (e) {} ta.remove(); done(ok); };
   if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(url).then(() => done(true), fallback); else fallback();
 }
+function qrSvg(text) {
+  if (typeof qrcode !== "function") return "";
+  try { const q = qrcode(0, "M"); q.addData(text); q.make(); return q.createSvgTag({ cellSize: 4, margin: 2, scalable: true, alt: "QR code" }); }
+  catch (e) { try { const q = qrcode(0, "L"); q.addData(text); q.make(); return q.createSvgTag({ cellSize: 4, margin: 2, scalable: true, alt: "QR code" }); } catch (e2) { return ""; } }
+}
+
+const scorerUrl = SITE + "scorer.html", qrEl = document.getElementById("qr");
+function drawQr() { const svg = qrSvg(scorerUrl); if (svg) { qrEl.innerHTML = svg; return true; } return false; }
+if (!drawQr()) window.addEventListener("load", () => { if (!drawQr()) { qrEl.parentElement.style.display = "none"; } });
+document.getElementById("qrPng").onclick = () => {
+  const svg = qrEl.querySelector("svg"); if (!svg) return;
+  const xml = new XMLSerializer().serializeToString(svg), img = new Image(), c = document.createElement("canvas"); c.width = c.height = 1000;
+  img.onload = () => { const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, 1000, 1000); g.imageSmoothingEnabled = false; g.drawImage(img, 0, 0, 1000, 1000);
+    const a = document.createElement("a"); a.href = c.toDataURL("image/png"); a.download = "judging-scorer-qr.png"; a.click(); };
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(xml);
+};
 document.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => copyLink(SITE + b.dataset.copy, b));
 </script>
 </body></html>

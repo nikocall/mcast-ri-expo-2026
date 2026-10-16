@@ -9,14 +9,16 @@ MCAST R&I Expo 2026 · Day 2 · Friday 30 October 2026 · 13:00–14:30 · 4 jud
 | Landing page | Everyone | https://nikocall.github.io/mcast-ri-expo-2026/ |
 | Judging Scorer | Judges | https://nikocall.github.io/mcast-ri-expo-2026/scorer.html |
 | Printable scorecard (A4 PDF) | Judges on paper | https://nikocall.github.io/mcast-ri-expo-2026/scorecard.pdf |
-| Combined Results | Organisers | https://nikocall.github.io/mcast-ri-expo-2026/results.html |
+| Master Results | Organiser (master device) | https://nikocall.github.io/mcast-ri-expo-2026/results.html |
+
+The landing page has a QR code that opens the scorer.
 
 ## How it works
 
-1. Send each judge the scorer link (or a printed scorecard).
-2. Judges score every pitch 1–5 on four criteria; scores save in their own browser.
-3. Each judge downloads their CSV and sends it to the organisers.
-4. Organisers open Combined Results and import the 4 CSVs, or type in paper marks.
+1. The organiser keeps **Master Results** open on their own device and browser — that copy is the master.
+2. Judges open the scorer (link or QR) and score every pitch 1–5 on four criteria; scores save in their own browser.
+3. Each judge taps **Send to organiser**, which makes a link (and QR) holding their marks, and shares it (WhatsApp, email…).
+4. The organiser opens each link on the master device and taps **Add to master results**. Links can also be pasted in; CSV import and typing in paper scorecards still work.
 
 ## Scoring
 
@@ -26,4 +28,4 @@ MCAST R&I Expo 2026 · Day 2 · Friday 30 October 2026 · 13:00–14:30 · 4 jud
 
 ## Privacy
 
-Every page is a static file. Scores are never uploaded; they stay in each person's browser (localStorage) until downloaded as CSV or cleared.
+Every page is a static file. Scores are never uploaded; they stay in each person's browser (localStorage) until downloaded as CSV or cleared. A judge's "Send to organiser" link carries the marks in the `#` fragment, which browsers never send to a server (GitHub included). The QR library (qrcode-generator 1.4.4) loads from cdnjs.
