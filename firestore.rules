@@ -1,0 +1,54 @@
+rules_version = '2';
+// Firestore security rules for the live judging page (index.html).
+// Paste into Firebase console → Firestore Database → Rules → Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function ev(e) { return /databases/$(database)/documents/events/$(e); }
+    // The device that created the event, or a device that entered the organiser key.
+    function ownerOf(e) {
+      return get(ev(e)).data.owner == request.auth.uid
+        || exists(/databases/$(database)/documents/events/$(e)/ownerClaims/$(request.auth.uid));
+    }
+    function uidOf(d) { return d.get('uid', null); }
+
+    match /events/{e} {
+      allow get: if signedIn();                 // anyone holding the (unguessable) event link
+      allow list: if false;                     // nobody can browse other events
+      allow create: if signedIn() && request.resource.data.owner == request.auth.uid;
+      allow update: if signedIn() && ownerOf(e) && request.resource.data.owner == resource.data.owner;
+      allow delete: if false;
+
+      // Organiser key: readable by organisers only; written once, in the same batch that creates the event.
+      match /private/{doc} {
+        allow get: if signedIn() && ownerOf(e);
+        allow list: if false;
+        allow create: if signedIn() && doc == 'admin'
+          && getAfter(ev(e)).data.owner == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      // A second organiser device proves it knows the key.
+      match /ownerClaims/{u} {
+        allow get: if signedIn() && request.auth.uid == u;
+        allow list: if false;
+        allow create: if signedIn() && request.auth.uid == u
+          && request.resource.data.keys().hasOnly(['key'])
+          && request.resource.data.key == get(/databases/$(database)/documents/events/$(e)/private/admin).data.key;
+        allow update, delete: if false;
+      }
+
+      // One document per judge tab. A judge's device claims an empty tab; after that only
+      // that device (or an organiser) can change it. Organisers can unlock a tab (uid -> null).
+      match /judges/{j} {
+        allow read: if signedIn();
+        allow create: if signedIn() && (ownerOf(e) || uidOf(request.resource.data) == request.auth.uid);
+        allow update: if signedIn() && (
+             ownerOf(e)
+          || (uidOf(resource.data) == request.auth.uid && uidOf(request.resource.data) == request.auth.uid)
+          || (uidOf(resource.data) == null && uidOf(request.resource.data) == request.auth.uid));
+        allow delete: if signedIn() && ownerOf(e);
+      }
+    }
+  }
+}
