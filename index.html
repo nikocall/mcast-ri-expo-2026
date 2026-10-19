@@ -409,7 +409,7 @@ function fset() {
   return S.fset;
 }
 function buildFinal() {
-  const o = fset(), { list, rows } = ranked(), lab = t => (t.no ? "#" + t.no + " " : "") + (t.name || "Untitled team");
+  const o = fset(), { list, rows } = ranked(), lab = t => (t.name || "Untitled team") + (t.no ? " (Team " + t.no + ")" : "");
   const scoredRows = rows.filter(t => t.rank), cut = o.places === "all" ? Infinity : o.places;
   const top = scoredRows.filter(t => t.rank <= cut).map(t => ({ rank: t.rank, no: t.no || "", name: t.name || "Untitled team", total: t.total == null ? null : Math.round(t.total * 100) / 100, tied: !!t.tied }));
   const aw = L => L ? { teams: L.teams.map(lab), best: Math.round(L.best * 100) / 100, how: L.how || "" } : null;
