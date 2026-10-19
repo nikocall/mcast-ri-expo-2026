@@ -108,6 +108,32 @@ ul.notes { font-size:12.5px; margin:6px 0 0; padding-left:16px; }
 footer { color:var(--muted); font-size:12px; border-top:1px solid var(--rule); padding:14px 0 30px; } footer a { color:var(--muted); }
 @media (max-width:820px) { .grid2, .leaders { grid-template-columns:1fr; } .guide { grid-template-columns:1fr 1fr; } h1 { font-size:21px; } header img { height:34px; }
   .crit { grid-template-columns:1fr; } .crit .q { padding-left:0; } .sc { width:46px; height:46px; } }
+/* final results */
+.final { text-align:center; }
+.final .fh { margin:6px 0 4px; } .final .fh .k { font-size:13px; } .final .fh h2 { font-size:30px; margin:6px 0 2px; }
+.final .when { color:var(--muted); font-size:13px; }
+.podium { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin:22px 0 10px; align-items:end; }
+.place { border-radius:18px; padding:22px 18px; background:var(--tint); color:var(--navy); }
+.place.p1 { background:var(--navy); color:#fff; padding:34px 18px; box-shadow:0 12px 34px rgba(0,0,67,.25); }
+.place.p2, .place.p3 { background:#E4EBF5; }
+.place .medal { display:inline-flex; width:58px; height:58px; border-radius:50%; align-items:center; justify-content:center; font-weight:700; font-size:24px; background:#fff; color:var(--navy); border:3px solid var(--cyan); }
+.place.p1 .medal { width:72px; height:72px; font-size:30px; background:var(--cyan); color:#fff; border-color:#fff; }
+.place .tn { font-size:22px; font-weight:700; margin:12px 0 2px; line-height:1.2; } .place.p1 .tn { font-size:28px; }
+.place .tno { font-size:13px; opacity:.75; } .place .ts { margin-top:10px; font-size:15px; font-weight:600; opacity:.9; }
+.place .tie { display:inline-block; margin-top:8px; font-size:12px; font-weight:700; background:#FFF3E0; color:var(--warn); border-radius:999px; padding:2px 10px; }
+.flist { max-width:720px; margin:6px auto 0; text-align:left; } .flist .r { display:flex; align-items:center; gap:14px; padding:10px 14px; border-bottom:1px solid var(--rule); font-size:17px; }
+.flist .r b.rk { display:inline-flex; width:34px; height:34px; border-radius:50%; background:var(--navy); color:#fff; align-items:center; justify-content:center; font-size:14px; flex:none; }
+.flist .r span.sc2 { margin-left:auto; color:var(--muted); font-weight:600; }
+.awards3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:26px; text-align:left; }
+.awards3 > div { background:var(--navy); color:var(--ice); border-radius:14px; padding:16px 18px; } .awards3 > div.pc { background:var(--cyan); color:#fff; }
+.awards3 strong { display:block; color:#fff; font-size:16px; } .awards3 .w { color:#fff; font-size:20px; font-weight:700; margin-top:10px; line-height:1.25; } .awards3 small { display:block; margin-top:4px; opacity:.85; font-size:12px; font-weight:600; }
+.fctl { display:grid; grid-template-columns:repeat(4, auto) 1fr; gap:14px 22px; align-items:end; }
+.fctl label.lab { display:flex; flex-direction:column; gap:6px; font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+.fctl select { font:inherit; font-size:14px; border:1.5px solid var(--rule); border-radius:8px; padding:8px 10px; background:#fff; color:var(--ink); max-width:260px; text-transform:none; letter-spacing:0; font-weight:500; }
+.stepper button:disabled { opacity:.3; cursor:default; }
+body.present header, body.present footer, body.present .tabs, body.present .noprint, body.present .banner { display:none !important; }
+body.present main .wrap { max-width:1500px; padding-top:30px; } body.present .final .fh h2 { font-size:42px; } body.present .place .tn { font-size:30px; } body.present .place.p1 .tn { font-size:38px; }
+@media (max-width:820px) { .awards3 { grid-template-columns:1fr; } .fctl { grid-template-columns:1fr 1fr; } .final .fh h2 { font-size:24px; } }
 @media print { .noprint, .tabs { display:none !important; } header, .leaders > div, .rank, th, .tfoot { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .tw { border:none; overflow:visible; } tr, .team { break-inside:avoid; } }
 </style></head>
 <body>
@@ -205,7 +231,7 @@ async function firebaseBackend() {
 }
 
 /* ============ state ============ */
-const S = { be: null, eventId: params.get("e"), ev: undefined, judges: {}, tab: "master", owner: false, key: null, error: "", saving: 0 };
+const S = { be: null, eventId: params.get("e"), ev: undefined, judges: {}, tab: params.get("view") === "final" ? "final" : "master", owner: false, key: null, error: "", saving: 0, audience: params.get("view") === "final", fset: null };
 const esc = v => String(v ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmt = v => (Math.round(v * 100) / 100).toFixed(2).replace(/\.?0+$/, "");
 const sum = a => a.reduce((x, y) => x + y, 0);
@@ -220,6 +246,7 @@ const canEdit = i => S.owner || (jdoc(i).uid && jdoc(i).uid === S.be.uid);
 const canSee = i => S.owner || canEdit(i) || !!S.ev?.showToJudges;
 const tlabel = t => (t.no ? "#" + esc(t.no) + " " : "") + esc(t.name || "Untitled team");
 const joinLink = () => (S.be.demo ? location.origin + location.pathname + "?demo&e=" : SITE + "?e=") + S.eventId;
+const resultsLink = () => (S.be.demo ? location.origin + location.pathname + "?demo&view=final&e=" : SITE + "?view=final&e=") + S.eventId;
 const scored = i => teams().filter(t => full(marks(i, t.id))).length;
 
 let savingT; async function save(p) {
@@ -271,12 +298,15 @@ function view() {
   if (!S.eventId) return viewStart();
   if (S.ev === undefined) return `<p class="muted">Connecting to the judging event…</p>`;
   if (S.ev === null) return `<div class="banner err">This judging event doesn't exist (or the link is incomplete). Ask the organiser for the link again.</div>${viewStart()}`;
-  const mine = myTab();
+  if (S.audience) return `<div class="panel">${viewFinal()}</div>`;
+  const mine = myTab(), showFinal = S.owner || !!S.ev.final;
+  if (S.tab === "final" && !showFinal) S.tab = "master";
   const tabs = `<div class="tabs" role="tablist">
     <button class="tab" role="tab" aria-selected="${S.tab === "master"}" data-tab="master">Master${S.owner ? ' <span class="you">you</span>' : ""}</button>
-    ${Array.from({ length: N() }, (_, i) => { const n = scored(i), T = teams().length; return `<button class="tab" role="tab" aria-selected="${S.tab === i}" data-tab="${i}">${esc(jname(i))}<span class="pill ${T && n === T ? "full" : ""}">${n}/${T}</span>${mine === i ? '<span class="you">you</span>' : ""}</button>`; }).join("")}</div>`;
+    ${Array.from({ length: N() }, (_, i) => { const n = scored(i), T = teams().length; return `<button class="tab" role="tab" aria-selected="${S.tab === i}" data-tab="${i}">${esc(jname(i))}<span class="pill ${T && n === T ? "full" : ""}">${n}/${T}</span>${mine === i ? '<span class="you">you</span>' : ""}</button>`; }).join("")}
+    ${showFinal ? `<button class="tab" role="tab" aria-selected="${S.tab === "final"}" data-tab="final">🏆 Final results${S.ev.final ? "" : ' <span class="pill">preview</span>'}</button>` : ""}</div>`;
   const demo = S.be.demo ? `<div class="banner warn noprint"><b>Demo mode:</b> data is kept in this browser only. ${FIREBASE_CONFIG ? "" : "Live sharing between devices switches on once the Firebase config is added."}</div>` : "";
-  return demo + tabs + `<div class="panel">${S.tab === "master" ? viewMaster() : viewJudge(S.tab)}</div>`;
+  return demo + tabs + `<div class="panel">${S.tab === "master" ? viewMaster() : S.tab === "final" ? viewFinal() : viewJudge(S.tab)}</div>`;
 }
 
 function viewStart() {
@@ -315,6 +345,7 @@ function viewMaster() {
       </div>
     </div>`;
   }
+  if (S.owner) setup += viewFinalControls();
   const visibleResults = S.owner || S.ev.showToJudges;
   const intro = S.owner ? "" : `<div class="card tint noprint" style="margin-bottom:6px"><h3>Welcome, judge</h3>
       <p class="muted" style="margin:0 0 10px">${myTab() !== null ? `You're marking as <b>${esc(jname(myTab()))}</b>.` : "Tap your name in the tabs above (or below) to start marking."}</p>
@@ -371,13 +402,66 @@ function viewJudge(i) {
   return head + (edit && !S.owner ? `<div class="banner ok">This is your tab. Marks save as you tap, and the organiser sees them straight away.</div>` : "") + guide + cards + sumtbl;
 }
 
+
+/* ============ final results ============ */
+function fset() {
+  if (!S.fset) { const f = S.ev?.final; S.fset = f ? { places: f.places, scores: f.showScores, pc: f.pcId || "" } : { places: 3, scores: true, pc: "" }; }
+  return S.fset;
+}
+function buildFinal() {
+  const o = fset(), { list, rows } = ranked(), lab = t => (t.no ? "#" + t.no + " " : "") + (t.name || "Untitled team");
+  const scoredRows = rows.filter(t => t.rank), cut = o.places === "all" ? Infinity : o.places;
+  const top = scoredRows.filter(t => t.rank <= cut).map(t => ({ rank: t.rank, no: t.no || "", name: t.name || "Untitled team", total: t.total == null ? null : Math.round(t.total * 100) / 100, tied: !!t.tied }));
+  const aw = L => L ? { teams: L.teams.map(lab), best: Math.round(L.best * 100) / 100, how: L.how || "" } : null;
+  const pcT = teams().find(t => t.id === o.pc);
+  return { places: o.places, showScores: !!o.scores, pcId: o.pc || "", pc: pcT ? lab(pcT) : "", rows: top, totalTeams: scoredRows.length,
+    awards: { impact: aw(decide(list, [IMP, TOTAL, C2])), valor: aw(decide(list, [C3, TOTAL, C2])) }, publishedAt: new Date().toISOString() };
+}
+function viewFinalControls() {
+  const o = fset(), f = S.ev.final, T = teams();
+  return `<h2 class="noprint">🏆 Final results</h2>
+  <div class="card noprint"><div class="fctl">
+    <label class="lab">Places to show<div class="row"><div class="stepper"><button data-act="fp" data-v="-1" aria-label="Fewer places" ${o.places === "all" ? "disabled" : ""}>−</button><span>${o.places === "all" ? "All" : o.places}</span><button data-act="fp" data-v="1" aria-label="More places" ${o.places === "all" ? "disabled" : ""}>+</button></div></div></label>
+    <label class="switch"><input type="checkbox" data-act="fall" ${o.places === "all" ? "checked" : ""}> Show every team</label>
+    <label class="switch"><input type="checkbox" data-act="fscores" ${o.scores ? "checked" : ""}> Show scores</label>
+    <label class="lab">People's Choice winner<select data-act="fpc"><option value="">Not announced</option>${T.map(t => `<option value="${t.id}" ${o.pc === t.id ? "selected" : ""}>${tlabel(t)}</option>`).join("")}</select></label>
+    <div class="row" style="justify-content:flex-end">${f ? `<span class="tag ok">Published ${esc(new Date(f.publishedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))}</span><button class="btn cy" data-act="pub">Update</button><button class="btn ghost" data-act="unpub">Unpublish</button>` : `<button class="btn cy" data-act="pub">Publish final results</button>`}</div>
+  </div>
+  <p class="muted" style="margin:12px 0 0">Publishing freezes the results as they are now and shows a <b>Final results</b> tab to everyone, judges included. Teams tied on the last place shown are all included. Later changes to marks only appear when you tap <b>Update</b>. Check the 🏆 tab preview first.</p>
+  ${f ? `<div class="row" style="margin-top:12px;gap:16px;align-items:center"><div class="qr" style="width:120px;height:120px" data-qr="${esc(resultsLink())}"></div><div style="flex:1 1 300px"><b>Results link for the audience</b> <span class="muted">(shows only the final results)</span><div class="link" style="margin:6px 0">${esc(resultsLink())}</div><button class="btn sm" data-act="copy" data-v="${esc(resultsLink())}">Copy results link</button></div></div>` : ""}
+  </div>`;
+}
+function viewFinal() {
+  const pub = S.ev.final, f = pub || (S.owner ? buildFinal() : null);
+  const head = `<div class="fh"><div class="k">MCAST R&amp;I Expo 2026 · Innovation &amp; Valorisation Pitch Session</div><h2>Final results</h2>`;
+  if (!f) return `<div class="final">${head}</div><div class="banner info" style="display:inline-block;margin-top:14px">The results will appear here as soon as the organiser announces them.</div></div>`;
+  const sc = t => f.showScores && t.total != null ? `<div class="ts">${fmt(t.total)} / 20 average</div>` : "";
+  const podium = f.rows.filter(t => t.rank <= 3), rest = f.rows.filter(t => t.rank > 3);
+  const ordered = podium.length === 3 && new Set(podium.map(t => t.rank)).size === 3 ? [podium[1], podium[0], podium[2]] : podium;
+  const ord = n => ["", "1st", "2nd", "3rd"][n] || n + "th";
+  const awardTxt = a => !a ? "—" : a.teams.map(esc).join("<br>") + (a.teams.length > 1 ? "<small>Tied, decided by the panel</small>" : "");
+  return `<div class="final">
+    ${!pub ? `<div class="banner warn noprint" style="text-align:left"><b>Preview:</b> only you can see this. Publish it from the Master tab when you're ready.</div>` : ""}
+    ${head}<div class="when">${f.places === "all" ? "All teams" : `Top ${f.places}`}${pub ? ` · announced ${esc(new Date(pub.publishedAt).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }))}` : ""}</div></div>
+    ${f.rows.length ? `<div class="podium">${ordered.map(t => `<div class="place p${t.rank}"><span class="medal">${t.rank}</span><div class="tn">${esc(t.name)}</div><div class="tno">${t.no ? "Team " + esc(t.no) + " · " : ""}${ord(t.rank)} place</div>${sc(t)}${t.tied ? '<span class="tie">Tied</span>' : ""}</div>`).join("")}</div>
+      ${rest.length ? `<div class="flist">${rest.map(t => `<div class="r"><b class="rk">${t.rank}</b><span><b>${esc(t.name)}</b>${t.no ? ` <span class="muted">Team ${esc(t.no)}</span>` : ""}${t.tied ? ' <span class="tag">tied</span>' : ""}</span>${f.showScores && t.total != null ? `<span class="sc2">${fmt(t.total)} / 20</span>` : ""}</div>`).join("")}</div>` : ""}`
+      : `<div class="banner info" style="display:inline-block;margin-top:14px">No team has been fully scored yet.</div>`}
+    <div class="awards3">
+      <div><strong>Best Research Impact</strong><div class="w">${awardTxt(f.awards.impact)}</div></div>
+      <div><strong>Most Valorisation Potential</strong><div class="w">${awardTxt(f.awards.valor)}</div></div>
+      <div class="pc"><strong>People's Choice</strong><div class="w">${f.pc ? esc(f.pc) : "To be announced"}</div></div>
+    </div>
+    <div class="row noprint" style="justify-content:center;margin-top:22px"><button class="btn" data-act="present">⛶ Present full screen</button>${S.owner ? `<button class="btn alt" data-act="print">Print</button>` : ""}</div>
+  </div>`;
+}
+
 /* ============ actions ============ */
 const E = () => S.eventId;
 // Apply organiser edits locally first, so quick successive edits never build on a stale copy.
 function patchEv(patch) { S.ev = { ...S.ev, ...patch }; render(); return save(S.be.patchEvent(E(), patch)); }
 app.addEventListener("click", async e => {
   const tb = e.target.closest("[data-tab]");
-  if (tb) { S.tab = tb.dataset.tab === "master" ? "master" : +tb.dataset.tab; render(); scrollTo({ top: app.offsetTop - 8, behavior: "smooth" }); return; }
+  if (tb) { S.tab = tb.dataset.tab === "master" || tb.dataset.tab === "final" ? tb.dataset.tab : +tb.dataset.tab; render(); scrollTo({ top: app.offsetTop - 8, behavior: "smooth" }); return; }
   const b = e.target.closest("[data-act]"); if (!b || b.type === "checkbox") return;
   const act = b.dataset.act, v = b.dataset.v;
   if (act === "create") {
@@ -410,12 +494,19 @@ app.addEventListener("click", async e => {
     try { await S.be.claimOwner(E(), key.includes("-") ? key : key.slice(0, 3) + "-" + key.slice(3)); S.owner = true; S.key = await S.be.readKey(E()); render(); }
     catch (x) { alert("That organiser key doesn't match this event."); }
   }
+  if (act === "fp") { const o = fset(); if (o.places !== "all") o.places = Math.max(1, Math.min(Math.max(teams().length, 1), o.places + +v)); render(); }
+  if (act === "pub") { const f = buildFinal(); if (!f.rows.length && !confirm("No team is fully scored yet. Publish anyway?")) return; patchEv({ final: f }); }
+  if (act === "unpub") { if (confirm("Hide the final results from everyone?")) patchEv({ final: null }); }
+  if (act === "present") { document.body.classList.add("present"); if (S.tab !== "final") { S.tab = "final"; render(); } document.documentElement.requestFullscreen?.().catch(() => {}); scrollTo(0, 0); }
   if (act === "csv") downloadCsv();
   if (act === "print") print();
 });
 app.addEventListener("change", e => {
   const t = e.target;
   if (t.dataset.act === "vis") return patchEv({ showToJudges: t.checked });
+  if (t.dataset.act === "fall") { fset().places = t.checked ? "all" : 3; return render(); }
+  if (t.dataset.act === "fscores") { fset().scores = t.checked; return render(); }
+  if (t.dataset.act === "fpc") { fset().pc = t.value; return render(); }
   if (t.dataset.team) { const ts = teams().map(x => x.id === t.dataset.team ? { ...x, [t.dataset.f]: t.value.trim() } : x); patchEv({ teams: ts }); }
   if (t.dataset.jname !== undefined) { const names = Array.from({ length: Math.max(N(), (S.ev.judgeNames || []).length) }, (_, i) => S.ev.judgeNames?.[i] || ""); names[+t.dataset.jname] = t.value.trim(); patchEv({ judgeNames: names }); }
 });
@@ -427,6 +518,8 @@ app.addEventListener("input", e => {
 });
 app.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id === "cname") app.querySelector('[data-act="claim"]')?.click(); if (e.key === "Enter" && e.target.id === "okey") app.querySelector('[data-act="ownerkey"]')?.click(); if (e.key === "Enter" && e.target.matches("input[data-team], input[data-jname]")) e.target.blur(); });
 
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement) document.body.classList.remove("present"); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && document.body.classList.contains("present")) document.body.classList.remove("present"); });
 function copyText(url, btn) {
   const done = ok => { const t = btn.textContent; btn.textContent = ok ? "Copied ✓" : "Copy failed"; setTimeout(() => btn.textContent = t, 1600); };
   const fb = () => { const ta = document.createElement("textarea"); ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (x) {} ta.remove(); done(ok); };
