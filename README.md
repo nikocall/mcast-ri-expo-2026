@@ -14,6 +14,7 @@ One page for everyone, with a **Master** tab for the organiser and one tab per j
 4. Each **judge** opens the link, taps their name, confirms, and marks every team 1–5 (with notes). Marks save instantly and the tab locks to their device.
 5. The Master tab shows live results: award leaders, ranking, per-judge totals, notes. The organiser can view and edit every tab (e.g. to type in a paper scorecard), unlock a tab if a judge changes device, and let judges see results with a switch.
 6. The **organiser key** on the Master tab opens the master on a second device.
+7. **Final results:** on the Master tab choose how many places to show (top 3 by default, any number, or every team), whether scores show, and the People's Choice winner, then **Publish**. Everyone gets a 🏆 Final results tab (a frozen snapshot; tap **Update** to refresh it). The **results link** (`?view=final&e=…`) shows only the results, and **Present full screen** is for the projector. Teams tied on the last place shown are included.
 
 ## Scoring
 
