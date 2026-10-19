@@ -373,6 +373,8 @@ function viewJudge(i) {
 
 /* ============ actions ============ */
 const E = () => S.eventId;
+// Apply organiser edits locally first, so quick successive edits never build on a stale copy.
+function patchEv(patch) { S.ev = { ...S.ev, ...patch }; render(); return save(S.be.patchEvent(E(), patch)); }
 app.addEventListener("click", async e => {
   const tb = e.target.closest("[data-tab]");
   if (tb) { S.tab = tb.dataset.tab === "master" ? "master" : +tb.dataset.tab; render(); scrollTo({ top: app.offsetTop - 8, behavior: "smooth" }); return; }
@@ -389,9 +391,9 @@ app.addEventListener("click", async e => {
   }
   if (act === "copy") copyText(v, b);
   if (act === "qrpng") saveQr();
-  if (act === "addteam") { const ts = [...teams(), { id: randId(8), no: String(teams().length + 1), name: "" }]; save(S.be.patchEvent(E(), { teams: ts })); }
-  if (act === "rmteam") { const t = teams().find(x => x.id === v); if (confirm(`Remove ${t.name || "team " + t.no}? Its marks will no longer count.`)) save(S.be.patchEvent(E(), { teams: teams().filter(x => x.id !== v) })); }
-  if (act === "nj") { const n = Math.min(MAXJ, Math.max(1, N() + +v)); if (n < N() && Object.keys(jdoc(n).marks || {}).length && !confirm(`${jname(n)} has marks. Hide their tab? (The marks are kept and come back if you add the judge again.)`)) return; save(S.be.patchEvent(E(), { numJudges: n })); }
+  if (act === "addteam") { const ts = [...teams(), { id: randId(8), no: String(teams().length + 1), name: "" }]; patchEv({ teams: ts }); }
+  if (act === "rmteam") { const t = teams().find(x => x.id === v); if (confirm(`Remove ${t.name || "team " + t.no}? Its marks will no longer count.`)) patchEv({ teams: teams().filter(x => x.id !== v) }); }
+  if (act === "nj") { const n = Math.min(MAXJ, Math.max(1, N() + +v)); if (n < N() && Object.keys(jdoc(n).marks || {}).length && !confirm(`${jname(n)} has marks. Hide their tab? (The marks are kept and come back if you add the judge again.)`)) return; patchEv({ numJudges: n }); }
   if (act === "unlock") { if (confirm(`Unlock ${jname(+v)}'s tab so they can open it on another device? Their marks stay.`)) save(S.be.patchJudge(E(), v, { uid: null })); }
   if (act === "claim") {
     const name = (document.getElementById("cname").value || "").trim(); if (!name) { document.getElementById("cname").focus(); return; }
@@ -413,9 +415,9 @@ app.addEventListener("click", async e => {
 });
 app.addEventListener("change", e => {
   const t = e.target;
-  if (t.dataset.act === "vis") return save(S.be.patchEvent(E(), { showToJudges: t.checked }));
-  if (t.dataset.team) { const ts = teams().map(x => x.id === t.dataset.team ? { ...x, [t.dataset.f]: t.value.trim() } : x); save(S.be.patchEvent(E(), { teams: ts })); }
-  if (t.dataset.jname !== undefined) { const names = Array.from({ length: Math.max(N(), (S.ev.judgeNames || []).length) }, (_, i) => S.ev.judgeNames?.[i] || ""); names[+t.dataset.jname] = t.value.trim(); save(S.be.patchEvent(E(), { judgeNames: names })); }
+  if (t.dataset.act === "vis") return patchEv({ showToJudges: t.checked });
+  if (t.dataset.team) { const ts = teams().map(x => x.id === t.dataset.team ? { ...x, [t.dataset.f]: t.value.trim() } : x); patchEv({ teams: ts }); }
+  if (t.dataset.jname !== undefined) { const names = Array.from({ length: Math.max(N(), (S.ev.judgeNames || []).length) }, (_, i) => S.ev.judgeNames?.[i] || ""); names[+t.dataset.jname] = t.value.trim(); patchEv({ judgeNames: names }); }
 });
 const noteTimers = {};
 app.addEventListener("input", e => {
